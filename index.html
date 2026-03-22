@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>홍길동 — 디지털 명함</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-pattern" aria-hidden="true"></div>
+  <main class="wrap">
+    <article class="card" id="card">
+      <div class="card__shine" aria-hidden="true"></div>
+      <header class="card__header">
+        <div class="avatar-scene" role="img" aria-label="40대 안경을 쓴 남성 캐릭터 프로필, 360도 회전">
+          <div class="avatar-pivot">
+            <div class="avatar-face avatar-face--front">
+              <img src="assets/avatar-character.png" alt="" width="160" height="160" decoding="async" />
+            </div>
+            <div class="avatar-face avatar-face--back" aria-hidden="true">
+              <img src="assets/avatar-character.png" alt="" width="160" height="160" decoding="async" />
+            </div>
+          </div>
+        </div>
+        <div class="card__titles">
+          <h1 class="name">홍길동</h1>
+          <p class="role">건설회사 경영기획 담당자</p>
+        </div>
+      </header>
+      <p class="tagline">현장의 흐름과 숫자를 맞추며, 실행 가능한 계획을 만듭니다.</p>
+      <ul class="contacts">
+        <li>
+          <a class="contact-link" href="mailto:honggildong@naver.com" id="emailLink">
+            <span class="contact-label">이메일</span>
+            <span class="contact-value">honggildong@naver.com</span>
+          </a>
+          <button type="button" class="btn-copy" id="copyEmail" title="이메일 주소 복사" aria-label="이메일 주소 복사">복사</button>
+        </li>
+        <li>
+          <a class="contact-link" href="tel:01000000000">
+            <span class="contact-label">연락처</span>
+            <span class="contact-value">010-0000-0000</span>
+          </a>
+        </li>
+      </ul>
+      <p class="toast" id="toast" role="status" aria-live="polite"></p>
+    </article>
+    <p class="footer-hint">프로필은 360° 회전합니다 · 명함을 살짝 기울여 보세요</p>
+  </main>
+  <script src="tilt.js?v=1"></script>
+  <script>
+    (function () {
+      var copyBtn = document.getElementById("copyEmail");
+      var toast = document.getElementById("toast");
+      var emailLink = document.getElementById("emailLink");
+      var toastTimer;
+
+      function showToast(msg) {
+        toast.textContent = msg;
+        toast.classList.add("is-visible");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+          toast.classList.remove("is-visible");
+        }, 2200);
+      }
+
+      function emailToCopy() {
+        if (!emailLink) return "";
+        var shown = emailLink.querySelector(".contact-value");
+        if (shown && shown.textContent) {
+          var t = shown.textContent.trim();
+          if (t) return t;
+        }
+        var href = emailLink.getAttribute("href") || "";
+        if (!/^mailto:/i.test(href)) return "";
+        var path = href.slice(7).split(/[?#]/)[0];
+        try {
+          return decodeURIComponent(path);
+        } catch (e) {
+          return path;
+        }
+      }
+
+      if (!copyBtn) return;
+
+      copyBtn.addEventListener("click", function () {
+        var email = emailToCopy();
+        if (!email) {
+          showToast("복사할 이메일을 찾을 수 없습니다.");
+          return;
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(email).then(function () {
+            showToast("이메일이 복사되었습니다.");
+          }).catch(function () {
+            showToast("복사에 실패했습니다. 주소를 직접 선택해 주세요.");
+          });
+        } else {
+          showToast("이 브라우저에서는 메일 링크를 이용해 주세요.");
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
