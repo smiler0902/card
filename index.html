@@ -40,12 +40,41 @@
           <button type="button" class="btn-copy" id="copyEmail" title="이메일 주소 복사" aria-label="이메일 주소 복사">복사</button>
         </li>
         <li>
-          <a class="contact-link" href="tel:01000000000">
+          <a class="contact-link" href="tel:01000000000" id="phoneLink">
             <span class="contact-label">연락처</span>
             <span class="contact-value">010-0000-0000</span>
           </a>
+          <button
+            type="button"
+            class="btn-copy"
+            id="copyPhone"
+            title="이름과 전화번호 복사"
+            aria-label="이름과 전화번호 복사"
+          >
+            복사
+          </button>
         </li>
       </ul>
+      <div class="qr-block">
+        <p class="qr-label">네이버</p>
+        <a
+          class="qr-link"
+          href="https://www.naver.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="www.naver.com 열기 (QR 코드)"
+        >
+          <img
+            class="qr-img"
+            src="assets/qrcode-naver.png"
+            width="132"
+            height="132"
+            alt="https://www.naver.com 으로 연결되는 QR 코드"
+            decoding="async"
+          />
+        </a>
+        <p class="qr-hint">스캔하거나 눌러 이동 · www.naver.com</p>
+      </div>
       <p class="toast" id="toast" role="status" aria-live="polite"></p>
     </article>
     <p class="footer-hint">프로필은 360° 회전합니다 · 명함을 살짝 기울여 보세요</p>
@@ -54,8 +83,10 @@
   <script>
     (function () {
       var copyBtn = document.getElementById("copyEmail");
+      var copyPhoneBtn = document.getElementById("copyPhone");
       var toast = document.getElementById("toast");
       var emailLink = document.getElementById("emailLink");
+      var phoneLink = document.getElementById("phoneLink");
       var toastTimer;
 
       function showToast(msg) {
@@ -84,24 +115,52 @@
         }
       }
 
-      if (!copyBtn) return;
+      function nameAndPhoneToCopy() {
+        var nameEl = document.querySelector(".card .name");
+        var name = nameEl && nameEl.textContent ? nameEl.textContent.trim() : "";
+        var phoneVal = phoneLink && phoneLink.querySelector(".contact-value");
+        var phone = phoneVal && phoneVal.textContent ? phoneVal.textContent.trim() : "";
+        if (!name && !phone) return "";
+        return "이름: " + name + "\n전화번호: " + phone;
+      }
 
-      copyBtn.addEventListener("click", function () {
-        var email = emailToCopy();
-        if (!email) {
-          showToast("복사할 이메일을 찾을 수 없습니다.");
-          return;
-        }
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(email).then(function () {
-            showToast("이메일이 복사되었습니다.");
-          }).catch(function () {
-            showToast("복사에 실패했습니다. 주소를 직접 선택해 주세요.");
-          });
-        } else {
-          showToast("이 브라우저에서는 메일 링크를 이용해 주세요.");
-        }
-      });
+      if (copyBtn) {
+        copyBtn.addEventListener("click", function () {
+          var email = emailToCopy();
+          if (!email) {
+            showToast("복사할 이메일을 찾을 수 없습니다.");
+            return;
+          }
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(email).then(function () {
+              showToast("이메일이 복사되었습니다.");
+            }).catch(function () {
+              showToast("복사에 실패했습니다. 주소를 직접 선택해 주세요.");
+            });
+          } else {
+            showToast("이 브라우저에서는 메일 링크를 이용해 주세요.");
+          }
+        });
+      }
+
+      if (copyPhoneBtn) {
+        copyPhoneBtn.addEventListener("click", function () {
+          var text = nameAndPhoneToCopy();
+          if (!text) {
+            showToast("복사할 내용을 찾을 수 없습니다.");
+            return;
+          }
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function () {
+              showToast("이름과 전화번호가 복사되었습니다.");
+            }).catch(function () {
+              showToast("복사에 실패했습니다. 직접 선택해 주세요.");
+            });
+          } else {
+            showToast("이 브라우저에서는 복사를 지원하지 않습니다.");
+          }
+        });
+      }
     })();
   </script>
 </body>
