@@ -48,32 +48,32 @@
             type="button"
             class="btn-copy"
             id="copyPhone"
-            title="이름과 전화번호 복사"
-            aria-label="이름과 전화번호 복사"
+            title="연락처 파일로 저장 (휴대폰에서 공유 또는 다운로드)"
+            aria-label="연락처에 저장하기"
           >
-            복사
+            저장
           </button>
         </li>
       </ul>
       <div class="qr-block">
-        <p class="qr-label">네이버</p>
+        <p class="qr-label">디지털 명함</p>
         <a
           class="qr-link"
-          href="https://www.naver.com"
+          href="https://smiler0902.github.io/card/"
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="www.naver.com 열기 (QR 코드)"
+          aria-label="이 디지털 명함 페이지 열기 (QR 코드)"
         >
           <img
             class="qr-img"
-            src="assets/qrcode-naver.png"
+            src="assets/qrcode-card.png"
             width="132"
             height="132"
-            alt="https://www.naver.com 으로 연결되는 QR 코드"
+            alt="https://smiler0902.github.io/card/ 로 연결되는 QR 코드"
             decoding="async"
           />
         </a>
-        <p class="qr-hint">스캔하거나 눌러 이동 · www.naver.com</p>
+        <p class="qr-hint">스캔하거나 눌러 이동 · smiler0902.github.io/card</p>
       </div>
       <p class="toast" id="toast" role="status" aria-live="polite"></p>
     </article>
@@ -115,13 +115,53 @@
         }
       }
 
-      function nameAndPhoneToCopy() {
+      function contactName() {
         var nameEl = document.querySelector(".card .name");
-        var name = nameEl && nameEl.textContent ? nameEl.textContent.trim() : "";
+        return nameEl && nameEl.textContent ? nameEl.textContent.trim() : "";
+      }
+
+      function contactPhone() {
         var phoneVal = phoneLink && phoneLink.querySelector(".contact-value");
-        var phone = phoneVal && phoneVal.textContent ? phoneVal.textContent.trim() : "";
-        if (!name && !phone) return "";
-        return "이름: " + name + "\n전화번호: " + phone;
+        return phoneVal && phoneVal.textContent ? phoneVal.textContent.trim() : "";
+      }
+
+      function contactEmailForVcard() {
+        if (!emailLink) return "";
+        var ev = emailLink.querySelector(".contact-value");
+        return ev && ev.textContent ? ev.textContent.trim() : "";
+      }
+
+      function safeFileName(s) {
+        return s.replace(/[\\/:*?"<>|]/g, "_").trim() || "contact";
+      }
+
+      function buildVCard() {
+        var name = contactName();
+        var phone = contactPhone();
+        var email = contactEmailForVcard();
+        var phoneDigits = phone.replace(/\D/g, "");
+        var lines = [
+          "BEGIN:VCARD",
+          "VERSION:3.0",
+          "FN:" + name,
+          "N:;" + name + ";;;",
+          "TEL;TYPE=CELL:" + (phoneDigits || phone)
+        ];
+        if (email) lines.push("EMAIL;TYPE=INTERNET:" + email);
+        lines.push("END:VCARD");
+        return lines.join("\r\n");
+      }
+
+      function downloadVcf(blob, fname) {
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = fname;
+        a.rel = "noopener";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       }
 
       if (copyBtn) {
@@ -145,19 +185,56 @@
 
       if (copyPhoneBtn) {
         copyPhoneBtn.addEventListener("click", function () {
-          var text = nameAndPhoneToCopy();
-          if (!text) {
-            showToast("복사할 내용을 찾을 수 없습니다.");
+          var name = contactName();
+          var phone = contactPhone();
+          if (!name && !phone) {
+            showToast("연락처 정보를 찾을 수 없습니다.");
             return;
           }
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(text).then(function () {
-              showToast("이름과 전화번호가 복사되었습니다.");
-            }).catch(function () {
-              showToast("복사에 실패했습니다. 직접 선택해 주세요.");
-            });
+
+          var vcard = buildVCard();
+          var blob = new Blob([vcard], { type: "text/vcard;charset=utf-8" });
+          var fname = safeFileName(name || "contact") + ".vcf";
+          var file = null;
+          try {
+            if (typeof File !== "undefined") {
+              file = new File([blob], fname, { type: "text/vcard", lastModified: Date.now() });
+            }
+          } catch (e) {
+            file = null;
+          }
+
+          var canShareFile = false;
+          if (navigator.share && file) {
+            if (!navigator.canShare) {
+              canShareFile = true;
+            } else {
+              try {
+                canShareFile = navigator.canShare({ files: [file] });
+              } catch (e) {
+                canShareFile = false;
+              }
+            }
+          }
+
+          if (canShareFile) {
+            navigator
+              .share({
+                files: [file],
+                title: name ? name + " 연락처" : "연락처",
+                text: "연락처를 저장하세요"
+              })
+              .then(function () {
+                showToast("연락처 저장을 완료했습니다.");
+              })
+              .catch(function (err) {
+                if (err && err.name === "AbortError") return;
+                downloadVcf(blob, fname);
+                showToast("연락처 파일을 저장했습니다. 파일을 열어 추가하세요.");
+              });
           } else {
-            showToast("이 브라우저에서는 복사를 지원하지 않습니다.");
+            downloadVcf(blob, fname);
+            showToast("연락처 파일을 저장했습니다. 파일을 열어 연락처에 추가하세요.");
           }
         });
       }
